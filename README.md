@@ -37,6 +37,8 @@ Note - Queens-Game is a similar website where queens puzzles are available but t
     python -m venv queens-venv
     ```
 
+    Don't forget to activate it depending on the OS!
+
 2. **Clone the repository**
 
     ```bash
