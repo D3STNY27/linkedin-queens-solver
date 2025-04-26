@@ -31,20 +31,26 @@ Note - Queens-Game is a similar website where queens puzzles are available but t
 
 ## ⚙️ Setup Instructions
 
-1. **Clone the repository**
+1. **Create Virtual Environment**
+
+    ```bash
+    python -m venv queens-venv
+    ```
+
+2. **Clone the repository**
 
     ```bash
     git clone https://github.com/D3STNY27/linkedin-queens-solver.git
     cd linkedin-queens-solver
     ```
 
-2. **Install Dependencies**
+3. **Install Dependencies**
 
     ```bash
     pip install -r requirements.txt
     ```
 
-3. **Run the Solver**
+4. **Run the Solver**
 
     ```bash
     cd src/app
