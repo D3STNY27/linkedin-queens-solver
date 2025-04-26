@@ -69,3 +69,11 @@ Unit tests are available to validate the solver logic:
 cd src
 python -m pytest
 ```
+
+---
+
+## Preview
+
+https://github.com/user-attachments/assets/d154d7ec-aa3a-4f43-b4ac-3f655248e8e2
+
+
