@@ -1,6 +1,5 @@
 from collections import defaultdict
 from copy import deepcopy
-from pprint import pprint
 
 from constants import ADJACENT_DIRECTIONS
 from helpers import coordinate_to_index, index_to_coordinate
@@ -15,10 +14,6 @@ class QueensState:
         self.state = deepcopy(state) if state is not None else self.__build_state()
         self.color_frequency = self.__build_frequency()
         self.queens = queens.copy() if queens is not None else []
-
-        # self.__print_grid()
-        # print(self.rows, self.cols)
-        # pprint(self.color_frequency)
     
 
     def __build_state(self):
@@ -39,73 +34,54 @@ class QueensState:
 
 
     def __print_grid(self):
-        output = []
+        output = ['\n']
+        PADDING = 6
 
         for r in range(self.rows):
             for c in range(self.cols):
-                output.append(str(self.grid[(r, c)]))
+                color = self.grid[(r, c)]
+                if (r, c) in self.state[color]:
+                    output.append(str(self.grid[(r, c)]).center(PADDING))
+                else:
+                    output.append("x".center(PADDING))
             output.append('\n')
         
         print(''.join(output))
     
 
     def solve(self):
-        # Invalid State Condition
-        # At any point, number of empty colors become greater than queens placed, its invalid
+        # [Invalid State Condition]
+        # At any point, if the number of empty colors become greater than queens placed, its invalid
         empty_colors = sum(1 for v in self.state.values() if not v)
         if empty_colors > len(self.queens):
             return False, None
 
-        # (Phase - 1) Try to solve if there is any color with 1 cell 
-        self.__solve_fixed()
-        self.__remove_adjacent_common_cells()
 
-        # By now we removed all cells with only 1 possibility
-        # Check if solution is found, else proceed with Phase - 2
-        solution_found = len(self.queens) == len(self.state)
-        if solution_found:
-            return solution_found, self.get_solution_forms()
-    
-        # (Phase - 2) Try to get all colors with only horizontal/vertical cells
-        # Remove cells horizontally/vertically where queens cannot be placed
-        straight_colors = self.__find_straight_cells()
+        # [Analytical Solving Iterations]
+        solution_found = False
 
-        # Track already processed colors
-        processed_colors = set()
+        while True:
+            old_state = deepcopy(self.state)
 
-        while straight_colors:
-            color, index, orientation = straight_colors.pop()
-            processed_colors.add(color)
-
-            self.__remove_straight_cells(color, index, orientation)
-
-            # It can happen that by removing some cells, some colors become straight again
-            # Add straight colors to set again (if not already present)
-
-            next_straight_colors = self.__find_straight_cells()
-            for n_color, n_index, n_orientation in next_straight_colors:
-                if n_color in processed_colors:
-                    continue
-
-                if n_color in straight_colors:
-                    continue
-
-                straight_colors.add((n_color, n_index, n_orientation))
-            
-            # It might happen that after removing some straight cells, some colors have 1 possiblity
-            # Try to solve
+            # Perform Checks
             self.__solve_fixed()
             self.__remove_adjacent_common_cells()
+            self.__remove_straight_cells()
+            self.__remove_pairwise_colors()
 
-        solution_found = len(self.queens) == len(self.state)
+            if len(self.queens) == len(self.state):
+                solution_found = True
+                break
+
+            if old_state == self.state:
+                break
+        
         if solution_found:
             return solution_found, self.get_solution_forms()
 
-        # (Phase - 3) Now there are no staright colors, need to do some more analysis
-        # There can be rows or columns where all cells are marked "x" except 1
 
-
-        # (Phase - 4) Backtracking
+        # [Optimized Backtracking]
+        # Prioritize colors with least cells remaining
         for _, color in self.color_frequency:
             if not self.state[color]:
                 continue
@@ -125,12 +101,10 @@ class QueensState:
     def __solve_fixed(self):
         while self.color_frequency and self.color_frequency[0][0]==1:
             _, color = self.color_frequency.pop(0)
-            
             coordinate = self.state[color].pop()
             self.place_queen(coordinate)
             
     
-
     # Public Method (for backtracking)
     def place_queen(self, coordinate: tuple):
         index = coordinate_to_index(coordinate=coordinate, cols=self.cols)
@@ -205,34 +179,38 @@ class QueensState:
         return straight_colors
 
 
-    def __remove_straight_cells(self, color: int, index: int, orientation: str):
+    def __remove_straight_cells(self):
         cells_to_remove = defaultdict(set)
+        straight_colors = self.__find_straight_cells()
 
-        # If Orientation is "vertical", index is "column" index
-        if orientation == 'v':
-            c = index
-            for r in range(self.rows):
-                # Avoid Removing Same Color Cells
-                if self.grid[(r, c)] == color:
-                    continue
+        while straight_colors:
+            color, index, orientation = straight_colors.pop()
 
-                # If cell is not present in color, skip
-                if (r, c) not in self.state[self.grid[(r, c)]]:
-                    continue
+            # If Orientation is "vertical", index is "column" index
+            if orientation == 'v':
+                c = index
+                for r in range(self.rows):
+                    # Avoid Removing Same Color Cells
+                    if self.grid[(r, c)] == color:
+                        continue
 
-                cells_to_remove[self.grid[(r, c)]].add((r, c))
-        else:
-            r = index
-            for c in range(self.cols):
-                # Avoid Removing Same Color Cells
-                if self.grid[(r, c)] == color:
-                    continue
+                    # If cell is not present in color, skip
+                    if (r, c) not in self.state[self.grid[(r, c)]]:
+                        continue
 
-                # If cell is not present in color, skip
-                if (r, c) not in self.state[self.grid[(r, c)]]:
-                    continue
+                    cells_to_remove[self.grid[(r, c)]].add((r, c))
+            else:
+                r = index
+                for c in range(self.cols):
+                    # Avoid Removing Same Color Cells
+                    if self.grid[(r, c)] == color:
+                        continue
 
-                cells_to_remove[self.grid[(r, c)]].add((r, c))
+                    # If cell is not present in color, skip
+                    if (r, c) not in self.state[self.grid[(r, c)]]:
+                        continue
+
+                    cells_to_remove[self.grid[(r, c)]].add((r, c))
         
         self.__remove_cells_and_update_frequency(cells_to_remove=cells_to_remove)
     
@@ -249,7 +227,7 @@ class QueensState:
     def __remove_adjacent_common_cells(self):
         cells_to_remove = defaultdict(set)
 
-        for color, cells in self.state.items():
+        for _, cells in self.state.items():
             if not cells:
                 continue
         
@@ -260,10 +238,75 @@ class QueensState:
         self.__remove_cells_and_update_frequency(cells_to_remove=cells_to_remove)
     
 
+    # To-Do: Can be generalized to colors >= 3?
+    def __remove_pairwise_colors(self):
+        active_colors = [color for color, cells in self.state.items() if cells]
+        n = len(active_colors)
+
+        for i in range(n-1):
+            for j in range(i+1, n):
+                color_a = active_colors[i]
+                color_b = active_colors[j]
+                
+                cells_a = self.state[color_a]
+                cells_b = self.state[color_b]
+                
+                rows_a = sorted({r for r, _ in cells_a})
+                cols_a = sorted({c for _, c in cells_a})
+                
+                rows_b = sorted({r for r, _ in cells_b})
+                cols_b = sorted({c for _, c in cells_b})
+
+                if len(rows_a) == 2 and rows_a == rows_b:
+                    self.__remove_pairwise_rows_cells(rows_a, color_a, color_b)
+                
+                if len(cols_a) == 2 and cols_a == cols_b: 
+                    self.__remove_pairwise_column_cells(cols_a, color_a, color_b)
+    
+
+    def __remove_pairwise_column_cells(self, columns, color_a, color_b):
+        cells_to_remove = defaultdict(set)
+
+        for c in columns:
+            for r in range(self.rows):
+                if (r, c) in self.state[color_a]:
+                    continue
+            
+                if (r, c) in self.state[color_b]:
+                    continue
+
+                if (r, c) not in self.state[self.grid[(r, c)]]:
+                    continue
+
+                cells_to_remove[self.grid[(r, c)]].add((r, c))
+
+        self.__remove_cells_and_update_frequency(cells_to_remove=cells_to_remove)
+    
+
+    def __remove_pairwise_rows_cells(self, rows, color_a, color_b):
+        cells_to_remove = defaultdict(set)
+        
+        for r in rows:
+            for c in range(self.cols):
+                if (r, c) in self.state[color_a]:
+                    continue
+            
+                if (r, c) in self.state[color_b]:
+                    continue
+
+                if (r, c) not in self.state[self.grid[(r, c)]]:
+                    continue
+
+                cells_to_remove[self.grid[(r, c)]].add((r, c))
+
+        self.__remove_cells_and_update_frequency(cells_to_remove=cells_to_remove)
+            
+
     def __get_adjacent_cells(self, coordinate: tuple):
         x, y = coordinate
         adjacent_cells = set()
 
+        # Adjacent 8 Cells
         for dx, dy in ADJACENT_DIRECTIONS:
             r, c = (x + dx), (y + dy)
             if r < 0 or r >= self.rows or c < 0 or c >= self.cols:
@@ -277,6 +320,38 @@ class QueensState:
             
             adjacent_cells.add((r, c))
         
+        # Full Column
+        for r in range(self.rows):
+            # Avoid Removing Same Coordinate
+            if (r, y) == coordinate:
+                continue
+
+            # Avoid Removing Same Color
+            if (r, y) in self.state[self.grid[coordinate]]:
+                continue
+
+            if (r, y) not in self.state[self.grid[(r, y)]]:
+                continue
+
+            adjacent_cells.add((r, y))
+        
+
+        # Full Row
+        for c in range(self.cols):
+            # Avoid Removing Same Coordinate
+            if (x, c) == coordinate:
+                continue
+
+            # Avoid Removing Same Color
+            if (x, c) in self.state[self.grid[coordinate]]:
+                continue
+        
+            if (x, c) not in self.state[self.grid[(x, c)]]:
+                continue
+
+            adjacent_cells.add((x, c))
+
+
         return adjacent_cells
 
 

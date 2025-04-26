@@ -2,7 +2,6 @@ from time import sleep
 
 from constants import (GRID_CELL_ID, PUZZLE_IFRAME_CSS, QUEENS_GRID_ID,
                        SOLVE_PUZZLE_BUTTON_ID, SOURCE_TO_URL_MAP)
-from helpers import index_to_coordinate
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -12,9 +11,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 class ChromeDriver:
     def __init__(self, source: str):
-        self.options = Options()
         self.source = source
-        #self.options.add_argument("--start-fullscreen")
+
+        self.options = Options()
+        self.options.add_argument("--disable-gpu")
+        self.options.add_argument('--ignore-certificate-errors')
 
         self.driver = webdriver.Chrome(options=self.options)
         self.wait = WebDriverWait(

@@ -23,14 +23,6 @@ if source is None:
 driver = ChromeDriver(source=source)
 queens_html = driver.fetch_queens_grid_html()
 
-# if source == 'Queens Game':
-#     with open('queens-test-2.html', 'r') as in_file:
-#         queens_html = in_file.read()
-# else:
-#     with open('queens-test-1.html', 'r') as in_file:
-#         queens_html = in_file.read()
-
-
 parser = QueensHtmlParser(source=source)
 rows, cols, grid = parser.parse_queens_html(html=queens_html)
 
@@ -40,5 +32,5 @@ solution_found, solution = puzzle.solve()
 if not solution_found:
     raise Exception('Solution Not Found')
 
-print(solution)
+print(f'{solution=}')
 driver.put_solution_to_grid(solution)
