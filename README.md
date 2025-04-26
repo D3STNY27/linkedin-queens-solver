@@ -4,8 +4,9 @@
 It places queens on a grid according to the puzzle rules without conflicts.
 
 It combines:
-1. Anaytical Solving (Follow the constraints of the puzzle and place queens also removing cells where queen cannot be placed)
-2. Backtracking (Although linkedin queens can be solved with analytical solution most of the times, backtracking is added if there is incomplete analytical solution)
+1. Selenium Automations: Dynamically fetches grid from selected "Source" website and places queens after solution is found.
+2. Anaytical Solving (Follow the constraints of the puzzle and place queens also removing cells where queen cannot be placed)
+3. Backtracking (Although linkedin queens can be solved with analytical solution most of the times, backtracking is added if there is incomplete analytical solution)
 
 Note - Queens-Game is a similar website where queens puzzles are available but they usually contain more than 1 solution where backtracking is required~
 
